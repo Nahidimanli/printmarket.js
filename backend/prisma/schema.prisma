@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STUDIO
+  CUSTOMER
+  UNASSIGNED
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  email         String         @unique
+  password      String?
+  role          Role           @default(CUSTOMER)
+  phone_number  String?        @unique
+  studio_profile StudioProfile?
+  orders        Order[]
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+}
+
+model StudioProfile {
+  id            Int       @id @default(autoincrement())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        Int       @unique
+  business_name String
+  description   String?
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  cover_image   String?
+  services      Service[]
+  orders        Order[]
+  created_at    DateTime  @default(now())
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String
+  slug        String     @unique
+  parentId    Int?
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children    Category[] @relation("SubCategories")
+  services    Service[]
+}
+
+model Service {
+  id               Int            @id @default(autoincrement())
+  studio           StudioProfile  @relation(fields: [studioId], references: [id])
+  studioId         Int
+  category         Category?      @relation(fields: [categoryId], references: [id])
+  categoryId       Int?
+  name             String
+  description      String?
+  image            String?
+  price            Decimal
+  discount_price   Decimal?
+  duration_minutes Int            @default(60)
+  is_active        Boolean        @default(true)
+  order_items      OrderItem[]
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+}
+
+model Order {
+  id          Int           @id @default(autoincrement())
+  customer    User          @relation(fields: [customerId], references: [id])
+  customerId  Int
+  studio      StudioProfile @relation(fields: [studioId], references: [id])
+  studioId    Int
+  status      String        @default("PENDING")
+  total_price Decimal       @default(0.00)
+  note        String?
+  items       OrderItem[]
+  files       OrderFile[]
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   Int
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId Int
+  price     Decimal
+  quantity  Int     @default(1)
+}
+
+model OrderFile {
+  id          Int      @id @default(autoincrement())
+  order       Order    @relation(fields: [orderId], references: [id])
+  orderId     Int
+  file        String
+  uploaded_at DateTime @default(now())
+}

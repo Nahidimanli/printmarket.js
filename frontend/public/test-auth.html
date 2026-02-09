@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>JWT Test</title>
+</head>
+
+<body>
+    <h1>JWT Authentication Test</h1>
+    <button onclick="testAuth()">Test /users/me Endpoint</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAuth() {
+            const token = localStorage.getItem('access_token');
+            const resultEl = document.getElementById('result');
+
+            if (!token) {
+                resultEl.textContent = 'No token found in localStorage. Please login first.';
+                return;
+            }
+
+            resultEl.textContent = 'Testing with token: ' + token.substring(0, 20) + '...\n\n';
+
+            try {
+                const response = await fetch('http://localhost:3000/users/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                resultEl.textContent += `Status: ${response.status} ${response.statusText}\n\n`;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultEl.textContent += 'Success! User data:\n' + JSON.stringify(data, null, 2);
+                } else {
+                    const error = await response.text();
+                    resultEl.textContent += 'Error response:\n' + error;
+                }
+            } catch (err) {
+                resultEl.textContent += 'Network error:\n' + err.message;
+            }
+        }
+    </script>
+</body>
+
+</html>
